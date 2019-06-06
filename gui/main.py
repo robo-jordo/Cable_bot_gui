@@ -44,8 +44,9 @@ class Ui_MainWindow(object):
 	def resizeEvent(self, event):
 		print("resize")
 		
-
 	def setupUi(self, MainWindow):
+		ui.closeEvent = self.closeEvent
+		app.aboutToQuit.connect(self.closeEvent)
 		self.filename = ''
 		self.MAX_Z = 0.7
 		self.MIN_Z = 0
@@ -55,10 +56,12 @@ class Ui_MainWindow(object):
 		self.MIN_Y = 0
 		self.fixed = False
 		self.mode = None
-		self.realRobot = True
+		self.realRobot = False
 		self.jog_event = None
 		self.responses = []
 		self.currents = []
+		self.wait_variable = False
+		QThread.__init__(self)
 
 		MainWindow.setObjectName(_fromUtf8("MainWindow"))
 		MainWindow.resize(800, 900)
@@ -71,7 +74,7 @@ class Ui_MainWindow(object):
 		'3 m 0 1;',
 		'4 e '+str(int(self.magnet))+' 1;']
 		if self.realRobot==True:
-			self.tivaSerial = sc.SerialCOm('/dev/ttyUSB1')
+			self.tivaSerial = sc.SerialCOm('/dev/ttyUSB0')
 		MainWindow.setStyleSheet("background-color: purple;")
 
 		self.centralwidget = QtGui.QWidget(MainWindow)
@@ -149,6 +152,7 @@ class Ui_MainWindow(object):
 		palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
 		self.ESTOP_2.setPalette(palette)
 		self.ESTOP_2.setObjectName(_fromUtf8("ESTOP_2"))
+		self.ESTOP_2.clicked.connect(self.Run)
 		self.horizontalLayout.addWidget(self.ESTOP_2)
 		self.ESTOP_3 = QtGui.QPushButton(self.layoutWidget)
 		self.ESTOP_3.setStyleSheet("color: White;")
@@ -174,6 +178,8 @@ class Ui_MainWindow(object):
 		palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
 		self.ESTOP_3.setPalette(palette)
 		self.ESTOP_3.setObjectName(_fromUtf8("ESTOP_3"))
+		self.ESTOP_3.clicked.connect(self.pause)
+		self.ESTOP_3.setCheckable(True)
 		self.horizontalLayout.addWidget(self.ESTOP_3)
 		self.ESTOP = QtGui.QPushButton(self.layoutWidget)
 		self.ESTOP.setStyleSheet("color: White;")
@@ -392,8 +398,26 @@ class Ui_MainWindow(object):
 		self.retranslateUi(MainWindow)
 		QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+	def closeEvent(self):
+		print("User has clicked the red x on the main window")
+		
 	def STOP(self):
-		pass
+		if self.realRobot==True:
+			self.tivaSerial.writeDataPack(self.stop_cmd)
+		print("Stopped")
+		sys.exit()
+
+	def pause(self):
+		self.wait_variable = not self.wait_variable
+		print(self.wait_variable)
+
+	def Run(self):
+		self.realRobot = True
+		self.btnstate()
+
+	def Check(self):
+		self.realRobot = True
+		self.btnstate()
 
 
 	def retranslateUi(self, MainWindow):
@@ -431,7 +455,7 @@ class Ui_MainWindow(object):
 
 	def startHome(self):
 		self.currents = []
-		curr_cmds = [['5 e 0IC;'],['5 e 1IC;'],['5 e 2IC;'],['5 e 3IC;']]
+		curr_cmds = [['5 e 0IC;'],['5 e 1IC;'],['5 e 2IC;'],['5 e 3IC;'],['5 e FP0;']]
 		if self.realRobot==True:
 			for i in range(len(curr_cmds)):
 				self.currents.append(self.tivaSerial.writeDataPack(curr_cmds[i]))
@@ -673,15 +697,10 @@ class Ui_MainWindow(object):
 					print("The dimensions entered were out of bounds")
 					print("Clipped dimensions were used")
 
-
-
-
-		#plt.pause(0.5)
-		# time.sleep(2)
 				goalPos=(goalX, goalY, goalZ)
 				print(goalPos)
-				dcb.drawGoal()
-				originPos=(dcb.posX,dcb.posY,dcb.posZ)
+				dcb_real.drawGoal()
+				originPos=(dcb_real.posX,dcb_real.posY,dcb_real.posZ)
 				num =1
 				deltax=(goalPos[0]-originPos[0])/num
 				deltay=(goalPos[1]-originPos[1])/num
@@ -694,10 +713,10 @@ class Ui_MainWindow(object):
 					x = deltax*i+originPos[0]
 					y = deltay*i+originPos[1]
 					z = deltaz*i+originPos[2]
-					dcb.setPos(x,y,z)
+					dcb_real.setPos(x,y,z)
 					for j in range(len(self.length_list)):
 						self.length_list_old[j] = self.length_list[j]
-					self.length_list  = dcb.drawGoal()
+					self.length_list  = dcb_real.drawGoal()
 					if (i!=0):
 						for j in range(len(self.length_list)):
 							self.length_change[j] = self.length_list[j] - self.length_list_old[j]
@@ -794,15 +813,6 @@ class Ui_MainWindow(object):
 											speeds.append(str(max_speeds[k]))
 									myCmd = []
 									for k in range(len(steps)):
-										# if (k == 1):
-										# 	myCmd.append(str(k)+' m '+ speeds[3] + " " + dirs[3] + ";")
-										# elif (k==3):
-										# 	myCmd.append(str(k)+' m '+ speeds[0] + " " + dirs[0] + ";")
-										# elif (k==0):
-										# 	myCmd.append(str(k)+' m '+ speeds[1] + " " + dirs[1] + ";")
-										# else:
-										# 	myCmd.append(str(k)+' m '+ speeds[k] + " " + dirs[k] + ";")
-
 										myCmd.append(str(k)+' m '+ speeds[k] + " " + dirs[k] + ";")
 									
 									print(myCmd)
@@ -811,8 +821,11 @@ class Ui_MainWindow(object):
 										self.tivaSerial.writeDataPack(myCmd)
 									self.count = self.count + 1
 									print(self.count)
-			if self.realRobot==True:
-				self.tivaSerial.sendStopCommand(int(self.magnet))
+									time.sleep(0.2)
+									while(self.wait_variable):
+										QtCore.QCoreApplication.processEvents()
+					if self.realRobot==True:
+						self.tivaSerial.sendStopCommand(int(self.magnet))
 			print("done")
 			print(self.count)
 					
@@ -823,10 +836,15 @@ class Ui_MainWindow(object):
 if __name__ == "__main__":
 	import sys
 	import io 
-	dcb = back.DrawCableBot()
-	dcb.initializaton()
-	dcb.drawNodes()
-	dcb.drawLines()
+	dcb_real = back.DrawCableBot()
+	dcb_real.initializaton()
+	dcb_real.drawNodes()
+	dcb_real.drawLines()
+
+	dcb_sim = back.DrawCableBot()
+	dcb_sim.initializaton()
+	dcb_sim.drawNodes()
+	dcb_sim.drawLines()
 	
 	app = QtGui.QApplication(sys.argv)
 	qp = QPixmap()

@@ -6,13 +6,13 @@ from mpl_toolkits.mplot3d import Axes3D
 import time
 import io
 import math
-
+#678+114.3
 class DrawCableBot:
     def __init__(self):
         self.length_list = [0, 0, 0, 0]
         self.length = 0.98
         self.width = 0.98
-        self.heighth = 0.790
+        self.heighth = 0.792
         self.posX = 0.49
         self.posY = 0.49
         self.posZ = 0.47
