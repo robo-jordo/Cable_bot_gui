@@ -471,24 +471,39 @@ class Ui_MainWindow(object):
 			print("Gone")
 
 	def startHome(self):
+		count = 0
 		self.currents = []
-		curr_cmds = [['5 e 0IQ;'],['5 e 1IQ;'],['5 e 2IQ;'],['5 e 3IQ;']]
+		curr_cmds = [['5 e 0IC;'],['5 e 1IC;'],['5 e 2IC;'],['5 e 3IC;']]
 		if self.realRobot==True:
-			for i in range(len(curr_cmds)):
-				self.currents.append(self.tivaSerial.writeDataPack2(curr_cmds[i]))
+			for j in range(len(curr_cmds)):
+				self.currents.append(self.tivaSerial.writeDataPack2(curr_cmds[j]))
 			print("Currents saved")
 			print(self.currents)
-			try:
-				for i in range(len(self.currents)):
-					self.currents[i] = float((str(self.currents[i]).split("=")[1]).split("""\r""")[0])
+			for i in range(len(self.currents)):
+				self.currents[i] = float((str(self.currents[i]).split("=")[1]).split("""\r""")[0])
+			print(self.currents)
+			for i in range(len(self.currents)):
+				if self.currents[i]>0.02 or self.currents[i]<-0.06:
+					if i == 0:
+						self.motor0_jog_up()
+						count = count +1
+					elif i == 1:
+						self.motor1_jog_up()
+						count = count +1
+					elif i == 2:
+						self.motor2_jog_up()
+						count = count +1
+					elif i == 3:
+						self.motor3_jog_up()
+						count = count +1
+			if count == 0:
 				print(self.currents)
-			except:
-				try:
-					for i in range(len(self.currents)):
-						self.currents[i] = float((str(self.currents[i]).split("=")[1]).split("""\r""")[0])
-					print(self.currents)
-				except:
-					print("read failed")
+				return 0
+
+			QApplication.processEvents()
+			self.startHome()
+			print(self.currents)
+
 
 
 
@@ -503,7 +518,6 @@ class Ui_MainWindow(object):
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(jog_cmd)
 			self.tivaSerial.writeDataPack(self.stop_cmd)
-		print("Jogging")
 		
 
 	def motor0_jog_down(self):
@@ -583,38 +597,75 @@ class Ui_MainWindow(object):
 		if (len(self.currents) <4):
 			return 0
 		for i in range(4):
+			self.currents = self.readCurrents()
 			print(i)
-			for j in range(10):
+			for j in range(15):
 				if i == 0:
 					self.motor0_jog_up()
+					if j==0:
+						time.sleep(0.5)
+						# self.currents = self.readCurrents()
+						print("tester")
+						print(self.currents)
 				elif i == 1:
 					self.motor1_jog_up()
+					if j==0:
+						time.sleep(0.5)
+						# self.currents = self.readCurrents()
+						print("tester")
+						print(self.currents)
 				elif i == 2:
 					self.motor2_jog_up()
+					if j==0:
+						time.sleep(0.5)
+						# self.currents = self.readCurrents()
+						print("tester")
+						print(self.currents)
 				elif i == 3:
 					self.motor3_jog_up()
-				
+					if j==0:
+						time.sleep(0.5)
+						# self.currents = self.readCurrents()
+						print("tester")
+						print(self.currents)
+				time.sleep(0.5)
 				self.responses = self.readCurrents()
-				print(math.fabs(math.fabs(self.responses[i])-math.fabs(self.currents[i])))
-				if math.fabs(self.responses[i])>math.fabs(self.currents[i])+6:
+				#print(math.fabs(math.fabs(self.responses[i])-math.fabs(self.currents[i])))
+				if self.responses[i]<self.currents[i]-0.07:
 					print(self.responses)
 					print(j)
 					if i == 0:
 						self.motor0_jog_down()
 						self.motor0_jog_down()
+						self.motor0_jog_down()
+						self.motor0_jog_down()
 					elif i == 1:
+						self.motor1_jog_down()
+						self.motor1_jog_down()
 						self.motor1_jog_down()
 						self.motor1_jog_down()
 					elif i == 2:
 						self.motor2_jog_down()
 						self.motor2_jog_down()
+						self.motor2_jog_down()
+						self.motor2_jog_down()
 					elif i == 3:
+						self.motor3_jog_down()
+						self.motor3_jog_down()
 						self.motor3_jog_down()
 						self.motor3_jog_down()
 					
 					break
 				else:
 					print(self.responses)
+		self.motor0_jog_up()
+		self.motor1_jog_up()
+		self.motor2_jog_up()
+		self.motor3_jog_up()
+		self.motor0_jog_up()
+		self.motor1_jog_up()
+		self.motor2_jog_up()
+		self.motor3_jog_up()
 		self.motor0_jog_up()
 		self.motor1_jog_up()
 		self.motor2_jog_up()
@@ -627,7 +678,7 @@ class Ui_MainWindow(object):
 
 	def readCurrents(self):
 		local_responses = []
-		curr_cmds = [['5 e 0IQ;'],['5 e 1IQ;'],['5 e 2IQ;'],['5 e 3IQ;']]
+		curr_cmds = [['5 e 0IC;'],['5 e 1IC;'],['5 e 2IC;'],['5 e 3IC;']]
 		if self.realRobot==True:
 			for i in range(len(curr_cmds)):
 				local_responses.append(self.tivaSerial.writeDataPack2(curr_cmds[i]))
@@ -743,10 +794,11 @@ class Ui_MainWindow(object):
 					goalY=float(goalY)
 					goalZ=float(goalZ)
 				else:
+
 					goalX=float(self.trajectory[row][0])
 					goalY=float(self.trajectory[row][1])
 					goalZ=float(self.trajectory[row][2])
-					#self.magnet = int(self.trajectory[row][3])
+					self.magnet = int(self.trajectory[row][3])
 
 
 				if(goalZ>self.MAX_Z):
