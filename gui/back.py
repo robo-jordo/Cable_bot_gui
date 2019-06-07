@@ -50,17 +50,18 @@ class DrawCableBot:
             ys = (self.XYZ[p1][1], self.XYZ[p2][1])
             zs = (self.XYZ[p1][2], self.XYZ[p2][2])
             line = plt3d.art3d.Line3D(xs, ys, zs)
-            self.ax.add_line(line)
+            #self.ax.add_line(line)
 
     def drawGoal(self,delta=0.0):
         # draw cable and end effector
-        self.ax.scatter(self.posX, self.posY, self.posZ, color='red', marker='s')
+        #self.ax.scatter(self.posX, self.posY, self.posZ, color='red', marker='s')
         NoCable=False
         if(len(self.cables)==0):
             NoCable=True
         else:
             for line in self.cables:
-                line.remove()
+                #line.remove()
+                pass
         self.cables=[1,1,1,1]
         cableIndex=0
         for xyz in self.XYZ[4:8]:
@@ -82,10 +83,10 @@ class DrawCableBot:
             self.length_list[cableIndex]= lengthcal
             self.temporary = self.length_list
 
-            self.ax.text(xyz[0],xyz[1],xyz[2],  '%s' % (str(lengthcal)), size=20, zorder=1,  color='k')
+            #self.ax.text(xyz[0],xyz[1],xyz[2],  '%s' % (str(lengthcal)), size=20, zorder=1,  color='k')
             line = plt3d.art3d.Line3D(xs, ys, zs)
             self.cables[cableIndex]=line
-            self.ax.add_line(self.cables[cableIndex])
+            #self.ax.add_line(self.cables[cableIndex])
             cableIndex=cableIndex+1
         # self.temporary = self.length_list[3]
         # self.length_list[3] = self.length_list[2]

@@ -70,8 +70,7 @@ class Ui_MainWindow(object):
 		'0 m 0 1;',
 		'1 m 0 1;',
 		'2 m 0 1;',
-		'3 m 0 1;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'3 m 0 1;']
 		if self.realRobot==True:
 			self.tivaSerial = sc.SerialCOm('/dev/ttyUSB0')
 		MainWindow.setStyleSheet("background-color: purple;")
@@ -500,8 +499,7 @@ class Ui_MainWindow(object):
 		'0 m 10000 0;',
 		'1 m 0 1;',
 		'2 m 0 1;',
-		'3 m 0 1;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'3 m 0 1;']
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(jog_cmd)
 			self.tivaSerial.writeDataPack(self.stop_cmd)
@@ -513,8 +511,7 @@ class Ui_MainWindow(object):
 		'0 m 10000 1;',
 		'1 m 0 1;',
 		'2 m 0 1;',
-		'3 m 0 1;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'3 m 0 1;']
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(jog_cmd)
 			self.tivaSerial.writeDataPack(self.stop_cmd)
@@ -524,8 +521,7 @@ class Ui_MainWindow(object):
 		'0 m 0 1;',
 		'1 m 10000 0;',
 		'2 m 0 1;',
-		'3 m 0 1;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'3 m 0 1;']
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(jog_cmd)
 			self.tivaSerial.writeDataPack(self.stop_cmd)
@@ -546,8 +542,7 @@ class Ui_MainWindow(object):
 		'0 m 0 1;',
 		'1 m 0 1;',
 		'2 m 10000 0;',
-		'3 m 0 1;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'3 m 0 1;']
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(jog_cmd)
 			self.tivaSerial.writeDataPack(self.stop_cmd)
@@ -557,8 +552,7 @@ class Ui_MainWindow(object):
 		'0 m 0 1;',
 		'1 m 0 1;',
 		'2 m 10000 1;',
-		'3 m 0 1;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'3 m 0 1;']
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(jog_cmd)
 			self.tivaSerial.writeDataPack(self.stop_cmd)
@@ -568,8 +562,7 @@ class Ui_MainWindow(object):
 		'0 m 0 1;',
 		'1 m 0 1;',
 		'2 m 0 1;',
-		'3 m 10000 0;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'3 m 10000 0;']
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(jog_cmd)
 			self.tivaSerial.writeDataPack(self.stop_cmd)
@@ -579,8 +572,7 @@ class Ui_MainWindow(object):
 		'0 m 0 1;',
 		'1 m 0 1;',
 		'2 m 0 1;',
-		'3 m 10000 1;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'3 m 10000 1;']
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(jog_cmd)
 			self.tivaSerial.writeDataPack(self.stop_cmd)
@@ -601,10 +593,10 @@ class Ui_MainWindow(object):
 					self.motor2_jog_up()
 				elif i == 3:
 					self.motor3_jog_up()
-				time.sleep(0.1)
+				
 				self.responses = self.readCurrents()
 				print(math.fabs(math.fabs(self.responses[i])-math.fabs(self.currents[i])))
-				if math.fabs(self.responses[i])>math.fabs(self.currents[i])+7:
+				if math.fabs(self.responses[i])>math.fabs(self.currents[i])+6:
 					print(self.responses)
 					print(j)
 					if i == 0:
@@ -627,6 +619,7 @@ class Ui_MainWindow(object):
 		self.motor1_jog_up()
 		self.motor2_jog_up()
 		self.motor3_jog_up()
+		dcb_real.setPos(0.49,0.49,0.1)
 					
 
 					
@@ -700,7 +693,7 @@ class Ui_MainWindow(object):
 		'1 m 0 1;',
 		'2 m 0 1;',
 		'3 m 0 1;',
-		'4 e '+str(int(self.magnet))+'1;']
+		'4 e '+str(int(self.magnet))+' 1;']
 		if self.realRobot==True:
 			self.tivaSerial.writeDataPack(stop_packet)
 			self.tivaSerial.writeDataPack(stop_packet)
@@ -753,6 +746,7 @@ class Ui_MainWindow(object):
 					goalX=float(self.trajectory[row][0])
 					goalY=float(self.trajectory[row][1])
 					goalZ=float(self.trajectory[row][2])
+					#self.magnet = int(self.trajectory[row][3])
 
 
 				if(goalZ>self.MAX_Z):
@@ -867,7 +861,10 @@ class Ui_MainWindow(object):
 
 									myCmd.append("4 e "+str(int(self.magnet))+" 0;")
 									print("Command")
+									start_time = time.time()
+									
 									print(myCmd)
+									print("--- %s seconds ---" % (time.time() - start_time))
 									print("stop")
 									if self.realRobot==True:
 										self.tivaSerial.writeDataPack(myCmd)
