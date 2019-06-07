@@ -56,12 +56,11 @@ class Ui_MainWindow(object):
 		self.MIN_Y = 0
 		self.fixed = False
 		self.mode = None
-		self.realRobot = False
+		self.realRobot = True
 		self.jog_event = None
 		self.responses = []
 		self.currents = []
 		self.wait_variable = False
-		QThread.__init__(self)
 
 		MainWindow.setObjectName(_fromUtf8("MainWindow"))
 		MainWindow.resize(800, 900)
@@ -109,11 +108,17 @@ class Ui_MainWindow(object):
 		self.pushButton2.setStyleSheet("color: White;")
 		self.pushButton2.setCheckable(True)
 
-		# self.pushButton3 = QtGui.QPushButton(self.centralwidget)
-		# self.pushButton3.setGeometry(QtCore.QRect(300, 400, 121, 71))
-		# self.pushButton3.setObjectName(_fromUtf8("pushButton3"))
-		# self.pushButton3.clicked.connect(self.homestate)
-		# self.pushButton3.setStyleSheet("color: White;")
+		self.pushButton3 = QtGui.QPushButton(self.centralwidget)
+		self.pushButton3.setGeometry(QtCore.QRect(300, 400, 121, 71))
+		self.pushButton3.setObjectName(_fromUtf8("pushButton3"))
+		self.pushButton3.clicked.connect(self.homesave)
+		self.pushButton3.setStyleSheet("color: White;")
+
+		self.pushButton4 = QtGui.QPushButton(self.centralwidget)
+		self.pushButton4.setGeometry(QtCore.QRect(450, 400, 121, 71))
+		self.pushButton4.setObjectName(_fromUtf8("pushButton4"))
+		self.pushButton4.clicked.connect(self.homego)
+		self.pushButton4.setStyleSheet("color: White;")
 
 		self.label_pic_2 = QtGui.QLabel(self.centralwidget)
 		self.label_pic_2.setGeometry(QtCore.QRect(0, 490, 581, 291))
@@ -424,7 +429,8 @@ class Ui_MainWindow(object):
 		MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
 		self.pushButton.setText(_translate("MainWindow", "Check trajectory", None))
 		self.pushButton2.setText(_translate("MainWindow", "Pick", None))
-		#self.pushButton3.setText(_translate("MainWindow", "Home", None))
+		self.pushButton3.setText(_translate("MainWindow", "Home save", None))
+		self.pushButton4.setText(_translate("MainWindow", "Home go", None))
 		self.upButton.setText(_translate("MainWindow", "Upload CSV", None))
 		self.ESTOP_2.setText(_translate("MainWindow", "Run", None))
 		self.ESTOP_3.setText(_translate("MainWindow", "Pause", None))
@@ -453,14 +459,39 @@ class Ui_MainWindow(object):
 		self.Motor2_down.setText(_translate("MainWindow", "2 down", None))
 		self.Motor3_down.setText(_translate("MainWindow", "3 down", None))
 
+	def homesave(self):
+		curr_cmds = [['5 e SP0;']]
+		if self.realRobot==True:
+			self.tivaSerial.writeDataPack(curr_cmds[0])
+			print("saved")
+
+	def homego(self):
+		curr_cmds = [['5 e FP0;']]
+		if self.realRobot==True:
+			self.tivaSerial.writeDataPack(curr_cmds[0])
+			print("Gone")
+
 	def startHome(self):
 		self.currents = []
-		curr_cmds = [['5 e 0IC;'],['5 e 1IC;'],['5 e 2IC;'],['5 e 3IC;'],['5 e FP0;']]
+		curr_cmds = [['5 e 0IQ;'],['5 e 1IQ;'],['5 e 2IQ;'],['5 e 3IQ;']]
 		if self.realRobot==True:
 			for i in range(len(curr_cmds)):
-				self.currents.append(self.tivaSerial.writeDataPack(curr_cmds[i]))
+				self.currents.append(self.tivaSerial.writeDataPack2(curr_cmds[i]))
 			print("Currents saved")
 			print(self.currents)
+			try:
+				for i in range(len(self.currents)):
+					self.currents[i] = float((str(self.currents[i]).split("=")[1]).split("""\r""")[0])
+				print(self.currents)
+			except:
+				try:
+					for i in range(len(self.currents)):
+						self.currents[i] = float((str(self.currents[i]).split("=")[1]).split("""\r""")[0])
+					print(self.currents)
+				except:
+					print("read failed")
+
+
 
 	def motor0_jog_up(self):
 		# self.jog_event = 0
@@ -556,12 +587,60 @@ class Ui_MainWindow(object):
 
 	def completeHome(self):
 		self.responses = []
-		curr_cmds = [['5 e 0IC;'],['5 e 1IC;'],['5 e 2IC;'],['5 e 3IC;']]
+		print(self.currents)
+		if (len(self.currents) <4):
+			return 0
+		for i in range(4):
+			print(i)
+			for j in range(10):
+				if i == 0:
+					self.motor0_jog_up()
+				elif i == 1:
+					self.motor1_jog_up()
+				elif i == 2:
+					self.motor2_jog_up()
+				elif i == 3:
+					self.motor3_jog_up()
+				time.sleep(0.1)
+				self.responses = self.readCurrents()
+				print(math.fabs(math.fabs(self.responses[i])-math.fabs(self.currents[i])))
+				if math.fabs(self.responses[i])>math.fabs(self.currents[i])+7:
+					print(self.responses)
+					print(j)
+					if i == 0:
+						self.motor0_jog_down()
+						self.motor0_jog_down()
+					elif i == 1:
+						self.motor1_jog_down()
+						self.motor1_jog_down()
+					elif i == 2:
+						self.motor2_jog_down()
+						self.motor2_jog_down()
+					elif i == 3:
+						self.motor3_jog_down()
+						self.motor3_jog_down()
+					
+					break
+				else:
+					print(self.responses)
+		self.motor0_jog_up()
+		self.motor1_jog_up()
+		self.motor2_jog_up()
+		self.motor3_jog_up()
+					
+
+					
+
+
+	def readCurrents(self):
+		local_responses = []
+		curr_cmds = [['5 e 0IQ;'],['5 e 1IQ;'],['5 e 2IQ;'],['5 e 3IQ;']]
 		if self.realRobot==True:
 			for i in range(len(curr_cmds)):
-				self.responses.append(self.tivaSerial.writeDataPack(curr_cmds[i]))
-			print("Gui")
-			print(self.responses)
+				local_responses.append(self.tivaSerial.writeDataPack2(curr_cmds[i]))
+			for i in range(len(local_responses)):
+				local_responses[i] = float((str(local_responses[i]).split("=")[1]).split("""\r""")[0])
+			return local_responses
 
 
 	def update(self):
@@ -621,8 +700,9 @@ class Ui_MainWindow(object):
 		'1 m 0 1;',
 		'2 m 0 1;',
 		'3 m 0 1;',
-		'4 e '+str(int(self.magnet))+' 1;']
+		'4 e '+str(int(self.magnet))+'1;']
 		if self.realRobot==True:
+			self.tivaSerial.writeDataPack(stop_packet)
 			self.tivaSerial.writeDataPack(stop_packet)
 		self.retranslateUi(MainWindow)
 		QApplication.processEvents()
@@ -796,10 +876,11 @@ class Ui_MainWindow(object):
 								longest_mot = np.argmax(steps)
 								max_speeds=[]
 								for k in range(len(steps)):
-									if(math.fabs(self.angle[k]/longest)<4200):
-										max_speeds.append(int(math.fabs(self.angle[k]/longest)*10))
-									else:
-										max_speeds.append(42000) 
+									if (longest>0):
+										if(math.fabs(self.angle[k]/longest)<4200):
+											max_speeds.append(int(math.fabs(self.angle[k]/longest)*10))
+										else:
+											max_speeds.append(42000) 
 								print(max_speeds)
 								for step in range(int(np.max(steps))+1):
 									speeds = []
@@ -818,14 +899,21 @@ class Ui_MainWindow(object):
 									print(myCmd)
 									myCmd.append("4 e "+str(int(self.magnet))+" 0;")
 									if self.realRobot==True:
+										t0 = time.time()
 										self.tivaSerial.writeDataPack(myCmd)
+										t1 = time.time()
+										print(t1-t0)
 									self.count = self.count + 1
 									print(self.count)
-									time.sleep(0.2)
+									QApplication.processEvents()
+									if self.realRobot==False:
+										time.sleep(0.2)
 									while(self.wait_variable):
+										if self.realRobot == True:
+											self.tivaSerial.writeDataPack(self.stop_cmd)
 										QtCore.QCoreApplication.processEvents()
-					if self.realRobot==True:
-						self.tivaSerial.sendStopCommand(int(self.magnet))
+							if self.realRobot==True:
+								self.tivaSerial.sendStopCommand(int(self.magnet))
 			print("done")
 			print(self.count)
 					
@@ -841,10 +929,6 @@ if __name__ == "__main__":
 	dcb_real.drawNodes()
 	dcb_real.drawLines()
 
-	dcb_sim = back.DrawCableBot()
-	dcb_sim.initializaton()
-	dcb_sim.drawNodes()
-	dcb_sim.drawLines()
 	
 	app = QtGui.QApplication(sys.argv)
 	qp = QPixmap()

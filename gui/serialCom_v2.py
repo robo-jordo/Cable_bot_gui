@@ -13,13 +13,13 @@ class SerialCOm(object):
     def writeData(self,cmd):
         # Write to uart
         self.tiva.write(cmd.encode('utf-8'))
-        print("sending:",cmd)
+        #print("sending:",cmd)
         self.tiva.flush()
         # Print back and block for receipt
         msg = self.tiva.readline().decode('utf-8')
-        print("sent:",msg)
+        #print("sent:",msg)
 
-    def writeDataPack(self,com_packet):
+    def writeDataPack2(self,com_packet):
         #send over each command in command packet
         self.tiva.reset_input_buffer()
         self.waitWriting()
@@ -28,6 +28,12 @@ class SerialCOm(object):
         response = self.waitWriting()
         return response
 
+    def writeDataPack(self,com_packet):
+        #send over each command in command packet
+        self.tiva.reset_input_buffer()
+        self.waitWriting()
+        for cmd in com_packet:
+            self.writeData(cmd)
 
     def waitWriting(self):
         self.tiva.timeout = None
